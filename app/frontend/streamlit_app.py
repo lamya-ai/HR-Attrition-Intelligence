@@ -1,5 +1,6 @@
 
 from pathlib import Path
+import os
 
 import pandas as pd
 import plotly.express as px
@@ -17,7 +18,11 @@ DATA_PATH = ROOT / "data" / "HR_capstone_dataset.csv"
 MODEL_IMAGES = ROOT / "assets" / "model_results"
 EDA_IMAGES = ROOT / "assets" / "exploration"
 
-API_URL = "http://127.0.0.1:8000"
+# Local API by default; cloud deployment can override this.
+API_URL = os.getenv(
+    "API_URL",
+    "http://127.0.0.1:8000"
+).rstrip("/")
 
 NAVY = "#17324D"
 TEAL = "#275D62"
@@ -633,7 +638,7 @@ elif page == "Interactive Testing":
                 response = requests.post(
                     f"{API_URL}/predict",
                     json=employee,
-                    timeout=30
+                    timeout=60
                 )
 
                 response.raise_for_status()
@@ -652,15 +657,11 @@ elif page == "Interactive Testing":
 
                     if prediction == 1:
 
-                        st.error(
-                            "LIKELY TO LEAVE"
-                        )
+                        st.error("LIKELY TO LEAVE")
 
                     else:
 
-                        st.success(
-                            "LIKELY TO STAY"
-                        )
+                        st.success("LIKELY TO STAY")
 
                     st.write(
                         result.get(
@@ -692,8 +693,15 @@ elif page == "Interactive Testing":
 
                 st.error(
                     "The prediction API is unavailable. "
-                    "Make sure the FastAPI server is running "
-                    "on port 8000."
+                    "Check the API_URL configuration and ensure "
+                    "the FastAPI service is running."
+                )
+
+            except requests.exceptions.Timeout:
+
+                st.error(
+                    "The prediction request timed out. "
+                    "The backend may be starting up. Please try again."
                 )
 
             except requests.exceptions.HTTPError as error:
